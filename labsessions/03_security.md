@@ -51,6 +51,10 @@ One of the most important pieces of information in the metadata is the identity 
 
 TODO SCREENSHOT
 
+### Explicitly checking the client ID
+
+TODO CONTENT (show how the backend checks this, and explain why this is so important)
+
 ### Restricting the access token
 
 From this scenario, you can clearly conclude that the *access token* is a bearer token, and that anyone holding it can use it to access the protected resources.
