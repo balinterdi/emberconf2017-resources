@@ -1,3 +1,5 @@
+TODO ENABLE BINARY IN FILTER TO SEE GOOGLE RESPONSE
+
 # Choose your flows wisely
 
 Many OAuth 2.0 tutorials advise the use of the *Implicit Grant* flow, also known as the *two-legged* flow. This flow is straightforward, and seems a lot easier to implement than the *Authorization Code* flow, also known as the *three legged* flow. 
