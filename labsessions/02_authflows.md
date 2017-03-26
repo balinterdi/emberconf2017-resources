@@ -1,4 +1,4 @@
-# Authentication with OAuth 2.0
+# Authentication with OAuth 2.0 in Ember
 
 TODO INTRO (backend already implemented, focus on frontend)
 
