@@ -120,9 +120,129 @@ ESA which authorizer to use.
 
 ## Running flows with Torii
 
-TODO CONTENT (how to set up Torii, without tying it into ESA)
+Torii provides a clean set of abstractions (providers, adapters and the
+session) to implement the authorization flows in your application. It handles
+the whole redirection flow process, opens and closes the popup, and makes sure
+security best practices (like using and verifying a `state` parameter) are
+followed.
 
-## Torii and ember-simple-auth
+On top of that, it also implements numerous 3rd party OAuth2 providers, like
+Google, Facebook, Twitter, Github, etc., so working with these providers
+becomes a breeze. Its flexible architecture makes it easy to implement
+providers that are not bundled into the add-on.
+
+Integrating a provider can be as easy as just configuring the keys and redirect
+URLs:
+
+```js
+// config/environment.js
+
+module.exports = function(environment) {
+  var ENV = {
+    torii: {
+      providers: {
+        'github-oauth2': {
+          clientId: 'e309dba06c2f82915da8',
+          redirectUri: 'http://localhost:4200/oauth2callback'
+        },
+      }
+    },
+    (...)
+  };
+  (...)
+};
+```
+
+## ember-simple-auth (ESA) with Torii
+
+Session management is opt in with Torii, which makes it integrate very nicely
+with ESA. In this scenario, ESA manages the session and delegates 3rd-party
+authorization to Torii.
+
+The main interface of ESA is the `session` service. To initiate the
+authentication process, you call `authenticate` on it, passing in the name of
+the `authenticator` and any parameters it needs. For example:
+
+    this.get('session').authenticate('authenticator:github-auth-code', 'github-oauth2');
+
+The referenced authenticator is called `github-auth-code` and needs to exist as
+a file under `app/authenticators`. The easiest way to create an authenticator is
+by using the generator provided by the add-on:
+
+    $ ember g authenticator github-auth-code
+
+You can also pass the `base-class` option that will make the generated
+authenticator extend that base class. ESA provides the `torii` authenticator to
+integrate with Torii so the command becomes:
+
+    $ ember g authenticator github-auth-code --base-class=torii
+
+```js
+// app/authenticators/github-auth-code.js
+import Torii from 'ember-simple-auth/authenticators/torii';
+
+export default Torii.extend({
+  torii: Ember.inject.service('torii')
+});
+```
+
+When you call `session.authenticate` on a Torii authenticator, the second
+parameter is the Torii provider that you want to use (`github-oauth2` in the
+above example). You can list the full list [here][list-of-torii-providers].
+
+So you need to implement the `authenticate` method of this authenticator.
+
+Calling `this._super` will do the whole OAuth authorization flow with Github and
+return an object that has an `authorizationCode` and `provider` parameter.
+
+The `authorizationCode` is the one you have to exchange for an access token with
+the backend. The backend has the following endpoint for this:
+
+    POST /tokens/validate
+
+    Request headers:
+      'Accept': 'application/vnd.api+json'
+      'Content-Type': 'application/vnd.api+json'
+    Request payload:
+      code: the authorization code (required)
+      provider: the name of the 3rd party provider, 'google', 'github' or
+      'facebook' (required)
+    Response:
+      user_email: the email of the authenticated user
+      token: the JWT token used as a session identifier with the backend
+
+
+What you return from the `authenticate` method of the `authenticator` will be
+set into the ESA session and persisted in your browser to be restored later:
+
+![](images/persisted-esa-session-information.png)
+
+In the current application, this return value should be an object with the
+following keys:
+
+    userEmail: the `user_email` value received from the backend
+    token: the `token` value received from the backend
+    provider: the value received from `this._super` (e.g github-oauth2)
+
+```js
+// app/authenticators/github-auth-code.js
+import Torii from 'ember-simple-auth/authenticators/torii';
+
+export default Torii.extend({
+  torii: Ember.inject.service('torii'),
+
+  authenticate() {
+    return this._super(...arguments)
+      .then((params) => {
+        // params have authorizationCode and provider
+        //TODO: Exchange code with backend and return
+        // what needs to be set into the session
+      });
+  },
+});
+```
+
+TODO: Talk about restoring the session with `restore`
 
 TODO CONTENT (how to integrate these two together)
 
@@ -132,3 +252,4 @@ TODO CONTENT (show how the backend links oauth info to an account)
 
 TODO CONTENT (implement both types of flows)
 
+[list-of-torii-providers]: https://github.com/Vestorly/torii/tree/master/addon/providers
