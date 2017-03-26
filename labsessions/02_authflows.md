@@ -4,8 +4,6 @@ TODO INTRO (backend already implemented, focus on frontend)
 
 ## Getting acquianted
 
-TODO CONTENT (look at current authentication)
-
 The current application is also set up to use work with the authenticated
 backend, so let's see how that works.
 
