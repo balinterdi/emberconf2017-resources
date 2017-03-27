@@ -190,7 +190,7 @@ We'll see an example on how to do that for the implicit grant (sign in via
 Google) scenario. Adjusting this for the authorization code flow (Github &
 Facebook) is left as an exercise for the reader.
 
---------
+## Implicit Grant flow (with Google)
 
 The main interface of ESA is the `session` service. To initiate the
 authentication process, you call `authenticate` on it, passing in the name of
@@ -238,9 +238,8 @@ following keys:
     token: the `token` value received from the backend
     provider: the name of the Torii provider (e.g `google-oauth2-bearer`)
 
-So you need to implement the `authenticate` method of this authenticator.
-
-TODO: Talk about restoring the session with `restore`
+**Exercise:** Implement the implicit grant flow by defining the `authenticate`
+method of this authenticator.
 
 ### Hint
 
@@ -274,10 +273,90 @@ export default Torii.extend({
 });
 ```
 
-TODO CONTENT (show how the backend links oauth info to an account)
+## Restoring the session
 
-## Two-legged and three-legged flows
+Restoring the session is what happens when you already have a persisted session
+in your browser and you reload the application. If the implementation is
+correct, you should see the exact state before you reloaded the app.
 
-TODO CONTENT (implement both types of flows)
+To implement this with ESA, the `restore` method in the authenticator needs to
+be implemented. The method receives as its only parameter the deserialized
+session data that had been persisted earlier.
+
+**Exercise:** Implement restoring the session after you've successfully logged in.
+
+### Hint
+
+With Torii adapters, the method needs to call its parent implementation (to do
+some housekeeping) which returns a promise. Once the promise resolves, we need
+to return the data we received as parameter.
+
+### Solution
+
+```js
+// app/authenticators/google-implicit-grant.js
+import Ember from 'ember';
+import Torii from 'ember-simple-auth/authenticators/torii';
+
+export default Torii.extend({
+  restore(data) {
+    return this._super(...arguments)
+      .then(() => {
+        return data;
+      });
+  }
+});
+```
+
+## Authorization code flow (with Github or Facebook)
+
+Implementing this scenario is very similar to what we already have implemented
+with Google. The main difference is that instead of receiving the access token
+from the provider at the end of the flow, the browser receives an authorization
+code. It then needs to exchange that code for an access token with the back-end.
+
+**Exercise:** Implement signing in with either Github or Facebook. For Github,
+the name of the Torii adapter is 'github-oauth2', for Facebook its 'facebook-oauth2'.
+
+### Github: Public vs. private email address
+
+On Github, you can choose to [keep your email address private.][github-email-privacy].
+
+To make sure the email can always be read from the user's profile, the OAuth
+application needs to explicitly ask for [the 'user:email' scope][github-scopes].
+
+It can then [read the email of the user][github-email-endpoints], even when the
+user chose to make those emails private.
+
+Here is how this is done on the back-end:
+
+```ruby
+def get_github_email(access_token)
+  conn = Faraday.new(:url => 'https://api.github.com/user/emails')
+  json_response = conn.get do |request|
+    request.headers['Authorization'] = "token #{access_token}"
+  end
+  response = JSON.parse(json_response.body)
+  response.first['email']
+end
+```
+
+Setting the scopes (permissions) that the OAuth app asks for needs to be
+configured in Torii. See [the docs][torii-docs] on how this should be done.
+
+## How authorization becomes authentication
+
+When an access token (or authorization code) is sent to the back-end, it hits
+the appropriate endpoint to access information from the user who authorized the
+OAuth application. In our case, that means fetching the user's email.
+
+It then uses this email address to link user accounts together. So if you
+registered an email address and then you authorize the Google OAuth app to
+access the same email address, these accounts are considered the same (and
+that's why you see the bands and songs previously created).
 
 [list-of-torii-providers]: https://github.com/Vestorly/torii/tree/master/addon/providers
+[github-email-privacy]: https://help.github.com/articles/keeping-your-email-address-private/
+[github-scopes]: https://developer.github.com/v3/oauth/#scopes
+[github-email-endpoints]: https://developer.github.com/v3/users/emails/#emails
+[torii-docs]: https://github.com/Vestorly/torii#configuring-a-torii-provider
