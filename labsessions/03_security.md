@@ -1,10 +1,8 @@
-TODO ENABLE BINARY IN FILTER TO SEE GOOGLE RESPONSE
-
 # Security properties of OAuth 2.0 flows
 
 Many OAuth 2.0 tutorials advise the use of the *Implicit Grant* flow, also known as the *two-legged* flow. This flow is straightforward, and seems a lot easier to implement than the *Authorization Code* flow, also known as the *three legged* flow. 
 
-In this lab session, we dissect both *Implicit Grant* flow and the *Authorization Code* flow, and show you which security properties each of these flows has to offer.
+In this lab session, we dissect both *Implicit Grant* flow and the *Authorization Code* flow, and show you the specific security properties for each of these flows.
 
 Additionally, we will discover how it all comes down to the *access token*, which plays a crucial role in every OAuth 2.0 flow. This token is known as a *bearer token*, which essentially means that posession of the token is sufficient to gain access to a protected resource. 
 
@@ -17,55 +15,82 @@ The first scenario illustrates the power of the *access token*. We will steal th
 
 Stealing the token can be done in various ways. Think about eavesdropping on the network, an XSS attack, a vulnerable or malicious browser extension, ...
 
-To avoid complicating this workshop even further, we're simply going to grab the *access token* from the network requests we already logged in *Burp*. Follow the steps below to get hold of an *access token*:
+To avoid complicating this workshop even further, we're simply going to grab the *access token* from the network requests we already logged in *Burp*. Follow the steps below to get hold of an *access token*.
 
 2. In *Burp*'s main window, select the *Proxy* tab
 2. Here, you will see a list of requests that *Burp* has intercepted
-3. Look for a request to the `/tokens/validate` endpoint
-4. Grab the *access token* from the request body and store it in a file for later use
+3. To narrow down the list we can adjust the filter settings. Click on the white bar that says *"Filter: ..."*, and adjust the checkboxes as shown on the image below.
 
-The screenshot below shows which requests holds the *access token*, and where you can find it.
+![](images/burp_filter.png)
 
-TODO SCREENSHOT
+Now, you should see a list like the one shown below.
+
+![](images/burp_oauthreqs.png)
+
+In this list, look for a request coming from Google, or going to the `/tokens/validate` endpoint. Note that you can inspect contents of both the request and response in the bottom pane. Grab the *access token* and store it in a file for later use
+
+The screenshot below shows you one example of where to find the *access token*.
+
+![](images/burp_accesstoken.png)
 
 
 ### Using the stolen access token
 
 The access token we stole was issued explicitly for the *Rock & Roll* application. Unfortunately, there is no way to restrict its use in an *Implicit Grant* flow. We have created a simple *Token Inspector* application, that allows you to simulate the abuse of an *access token*.
 
-The application is hosted on GitHub pages, at the following url: [https://philippederyck.github.io/emberconf2017-tokeninspector](https://philippederyck.github.io/emberconf2017-tokeninspector). If everything works correctly, you should see something like the screenshot below.
+The application is hosted on GitHub pages, at the following url: [TODO](TODO). If everything works correctly, you should see something like the screenshot below.
 
-TODO SCREENSHOT
+TODO SCREENSHOT TOKEN INSPECTOR
 
 You can give the application an *access token* for one of the supported providers. The application will contact the APIs and retrieve some information with this *access token*. If you're worried about the security of your account information, you'll be pleased to hear the everything runs on the client-side, and tokens are sent nowhere else but to their corresponding providers.
 
-So, let's grab the *access token* you saved to a file earlier, and see what the *Token Inspector* can find. 
+So, let's grab the *access token* you saved to a file earlier, and plug it into the *Access Token* window of the *Token Inspector*. 
 
-TODO ADD EXPLICIT INSTRUCTIONS WHEN THE APP IS BUILT
+In the first section, you can see a bit of information about the *access token* itself. Note that to get this information, the application needs to make an explicit call to a token information endpoint.
 
-In the first section, you can see a few examples of the kind of information that can be retrieved using the access token. As you can see, our *Rock & Roll* application requested access to a lot of resources (which it does not need), which becomes a real problem if the token ever gets stolen. TODO MAKE SURE WE OVERREACH IN RARWE
+In the second section, you can see a few pieces of information that could be retrieved.
 
-TODO SCREENSHOT
+TODO SCREENSHOT TOKEN INSPECTOR
 
-In the second section, you can find some metadata about the token. Note that this information is not provided by default. An explicit call to the issuer is needed to retreive this information.
+To illustrate the importance of keeping your scope limited, head back to the *Rock & Roll* application and modify the scope of the Google provider. You can find the documentation of Google's scopes here: [https://developers.google.com/identity/protocols/googlescopes](https://developers.google.com/identity/protocols/googlescopes). One example that the *Token Inspector* actually tries is the *https://www.googleapis.com/auth/contacts.readonly* scope.
 
-One of the most important pieces of information in the metadata is the identity of the client to which the token belongs. As you can see, the *client ID* corresponds to that of the *Rock & Roll* application, yet our *Token Inspector* application has no problems using the same token to retrieve information from the protected resource.
+TODO TRY OUT THESE STEPS ABOVE
 
-TODO SCREENSHOT
+
+From this scenario, you can clearly conclude that the *access token* is a bearer token, and that anyone holding it can use it to access the protected resources.
+That is exactly one of the reasons why the scope of a requested *access token* should be as limited as possible.
+
+
 
 ### Explicitly checking the client ID
 
-TODO CONTENT (show how the backend checks this, and explain why this is so important)
+One of the most important pieces of information in the metadata is the identity of the client to which the token belongs. The client ID you see should correspond to that of the Rock & Roll application:
 
-### Restricting the access token
+* Google Client ID: ``
+* Facebook Client ID: ``
+* Github Client ID: ``
 
-From this scenario, you can clearly conclude that the *access token* is a bearer token, and that anyone holding it can use it to access the protected resources.
+As you can see, the *client ID* of the token corresponds to that of the *Rock & Roll* application, yet our *Token Inspector* application has no problems using the same token to retrieve information from the protected resource.
 
-That is exactly one of the reasons why the scope of a requested *access token* should be as limited as possible. Modify your implementation of the *Ipmlicit Grant* flow to minimize the scope to what we need (i.e. *email*).
+Therefore, *access tokens* coming from the frontend should be validated before they can be used. This is something that the backend needs to do explicitly. In the *Rock & Roll* application, the following code is responsible for verifying the *access token* coming from Google.
 
-Now that you have modified your implementation, repeat the scenario from before. Take the *access token* and give it to the *Token Inspector*. If everything went well, you should see a lot less personal information in the first section, and the modified scope in the second section.
+```
+ def validate_google_token(token)
+    response = Faraday.get 
+      "https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=#{token}"
+    return unless response.status == 200
 
-TODO SCREENSHOT
+    response = JSON.parse(response.body)
+    if response['aud'] != ENV['GOOGLE_CLIENT_ID']
+      render json: {}, status: 401
+    end
+    response['email']
+  end
+```
+
+After the token metadata has been retrieved and the associated client ID has been verified against the backend's client ID, the token can be used for actually accessing the protected resources.
+
+
 
 ## Access tokens vs authorization codes
 
@@ -73,22 +98,25 @@ In the *Authorization Code* flow, the client receives an *authorization code* in
 
 Let's investigate the security properties of such an *authorization code*. Just like before, we're going to grab an *authorization code* from the logged requests in *Burp*, following the steps below:
 
-2. In *Burp*'s main window, select the *Proxy* tab
-2. Here, you will see a list of requests that *Burp* has intercepted
-3. Look for a request to the `/tokens/validate` endpoint (TODO CHECK)
-4. Grab the *authorization code* from the request body 
+In *Burp*'s list of HTTP requests, look for a request to the `/tokens/validate` endpoint with an *authorization code* in the body. 
 
-Now, head back to the *Token Inspector* application, and see if we can get an *access token* with this *authorization code*. Fill out the *authorization code* field, but leave the other fields blank.
+Now, head back to the *Token Inspector* application, and see if we can get an *access token* with this *authorization code*. Go to the *Authorization Code* window, and fill out the provider and the code you just grabbed. Leave the *client ID* and *client secret* blank.
 
-TODO SCREENSHOT
+TODO SCREENSHOT TOKEN INSPECTOR
 
 Here, you already see one major difference compared to the *access token*. To effectively use an *authorization code* you not only need to specify a *client ID* (which is public information), but also the *client secret*, which only the backend application knows.
 
-Use the information from the *Rock & Roll* application to complete both fields, and re-inspect the results.
+Use the correct information from the list below to complete both fields, and re-inspect the results.
 
-TODO SCREENSHWOT
+* Facebook: 
+	* Client ID: TODO
+	* Client Secret: TODO
+* Github: 
+	* Client ID: TODO
+	* Client Secret: TODO
 
-Even though we have all information, including the secret values that we normally would not have access to, we still do not get an *access token*. The reason for this error is that an *authorization code* is invalidated after first use.
+Even though we have all information, including the secret values that we normally would not have access to, we still do not get an *access token*. The reason for this error is that an *authorization code* is invalidated after first use (which was the request we logged in *Burp*).
+
 
 ### Exchanging an authorization code for an access token
 
@@ -97,23 +125,27 @@ Let's see what happens if we manage to steal a fresh *authorization code*. Would
 For this, we will use *Burp* to intercept requests, and stop the flow once we have obtained an *authorization code*. Follow the steps below to capture a fresh *authorization code*:
 
 1. Open the *Rock & Roll* application and make sure you're logged out
-1. In *Burp*'s *Proxy* tab, choose for *TODO* and make sure interception is turned on (see screenshot below)
+1. In *Burp*'s *Proxy* tab, choose for *Intercept* and make sure interception is turned on (see screenshot below)
 2. Start the *Authorization Code* flow with on of the supported providers
-3. *Burp* will have intercepted a request, so open *Burp* and click the *Forward* button.
+3. The window will stay blank, because *Burp* has stopped the request, and is waiting for confirmation to send it out
+3. Open *Burp* and click the *Forward* button, as shown below
 4. Keep going through the flow and forwarding requests, until you see the request containing the *authorization code*
 5. **Do not forward this request**, but simply copy the *authorization code*. Leave the window untouched, we will come back to this later.
 
-TODO SCREENSHOT INTERCEPT
+![](images/burp_intercepton.png)
+![](images/burp_interceptforward.png)
 
 With the freshly obtained *authorization code*, go back to the *Token Inspector*, and enter it into the inspection field. Leave the other fields blank for now. 
 
-As you can see, exchanging the *authorization code* for an *access token* is definitely not possible without providing the *client ID* and *client secret*. Fill out these values, and try again.
+As you can see, exchanging the *authorization code* for an *access token* is definitely not possible without providing the *client ID* and *client secret*. Fill out the correct values from the list we showed earlier, and try again.
 
-TODO SCREENSHOT
+TODO SCREENSHOT TOKEN INSPECTOR
 
 Now, we have actually obtained a valid *access token*, but we needed confidential information to get this far. Use the *access token* in the *Token Inspector* application to actually retrieve some information about the user.
 
-Now, go back to the intercepted request in *Burp*, and hit the *Forward* button. The *authorization code* will not be sent to the backend, which will try to exchange this for an *access code*, which will result in an error, since have already used this *authorization code* in the previous steps.
+Now, go back to the intercepted request in *Burp*, and hit the *Intercept On* button. This will turn interception off again, and forward all pending requests.
 
-TODO SCREENSHOT
+The *authorization code* will now be sent to the backend, which will try to exchange this for an *access code*. This will result in an error, since have already used this *authorization code* in the previous steps.
+
+TODO SCREENSHOT OF ERROR
 
