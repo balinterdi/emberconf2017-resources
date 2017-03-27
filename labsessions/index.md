@@ -8,11 +8,11 @@ If you have any questions about the labs, or other Ember / Security topics, don'
 
 ## Getting started
 
-Before you can get started with the lab sessions, we recommend you to complete a few configuration steps. Please carefully read and follow the [Getting Started](01_gettingstarted.html) guide.
+Before you can get started with the lab sessions, we recommend you to complete a few configuration steps. Please carefully read and follow the [Getting Started](01_gettingstarted.md) guide.
 
 ## Lab sessions
 
 These guides cover the scenarios we're running through in the lab sessions:
 
-1. [Authentication with OAuth 2.0 in Ember](02_authflows.html)
-2. [Security properties of OAuth 2.0 flows](03_security.html)
+1. [Authentication with OAuth 2.0 in Ember](02_authflows.md)
+2. [Security properties of OAuth 2.0 flows](03_security.md)
