@@ -94,31 +94,28 @@ After the token metadata has been retrieved and the associated client ID has bee
 
 ## Access tokens vs authorization codes
 
+__*Please run this scenario with Facebook. Github implements additional security measures, which makes this scenario impossible.*__
+
 In the *Authorization Code* flow, the client receives an *authorization code* instead of an *access token*. The backend application can exchange the *authorization code* for an *access token*, which it in turn can use to access the protected resources.
 
 Let's investigate the security properties of such an *authorization code*. Just like before, we're going to grab an *authorization code* from the logged requests in *Burp*, following the steps below:
 
 In *Burp*'s list of HTTP requests, look for a request to the `/tokens/validate` endpoint with an *authorization code* in the body. 
 
-Now, head back to the *Token Inspector* application, and see if we can get an *access token* with this *authorization code*. Go to the *Authorization Code* window, and fill out the provider and the code you just grabbed. Leave the *client ID* and *client secret* blank.
+Now, head back to the *Token Inspector* application, and see if we can get an *access token* with this *authorization code*. Go to the *Authorization Code* window, and fill out the provider and the code you just grabbed. 
 
 TODO SCREENSHOT TOKEN INSPECTOR
 
-Here, you already see one major difference compared to the *access token*. To effectively use an *authorization code* you not only need to specify a *client ID* (which is public information), but also the *client secret*, which only the backend application knows.
+Here, you already see one major difference compared to the *access token*. An *authorization code* can only be used once, and this token has already been used in the flow where we captured it from.
 
-Use the correct information from the list below to complete both fields, and re-inspect the results.
+A second difference is hiding under the hood of the *Token Inspector*. To contact the endpoints to exchange an *authorization code* for and *access_token*, you need to possess the *client ID* and *client secret*. This means that in principle, only the backend can make this calls.
 
-* Facebook: 
-	* Client ID: TODO
-	* Client Secret: TODO
-* Github: 
-	* Client ID: TODO
-	* Client Secret: TODO
-
-Even though we have all information, including the secret values that we normally would not have access to, we still do not get an *access token*. The reason for this error is that an *authorization code* is invalidated after first use (which was the request we logged in *Burp*).
+__*In the case of the Token Inspector, we have added the client IDs and client secrets to the client application. This is not a good security practice, and is only done for demonstration purposes!*__
 
 
 ### Exchanging an authorization code for an access token
+
+__*Please run this scenario with Facebook. Github implements additional security measures, which makes this scenario impossible.*__
 
 Let's see what happens if we manage to steal a fresh *authorization code*. Would we be able to get an *access token* with it? 
 
