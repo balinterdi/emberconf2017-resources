@@ -1,6 +1,6 @@
 # Secure authentication with OAuth 2.0 in Ember
 
-Welcome to this workshop at *EmberConf 2017*. In this workshop, we are going to interchange presentations wiht lab sessions. 
+Welcome to this workshop at *EmberConf 2017*. In this workshop, we are going to interchange presentations with lab sessions. 
 
 Below, you can find detailed guides that will help you get through the lab sessions. 
 

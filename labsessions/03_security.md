@@ -4,7 +4,7 @@ Many OAuth 2.0 tutorials advise the use of the *Implicit Grant* flow, also known
 
 In this lab session, we dissect both *Implicit Grant* flow and the *Authorization Code* flow, and show you the specific security properties for each of these flows.
 
-Additionally, we will discover how it all comes down to the *access token*, which plays a crucial role in every OAuth 2.0 flow. This token is known as a *bearer token*, which essentially means that posession of the token is sufficient to gain access to a protected resource. 
+Additionally, we will discover how it all comes down to the *access token*, which plays a crucial role in every OAuth 2.0 flow. This token is known as a *bearer token*, which essentially means that possession of the token is sufficient to gain access to a protected resource. 
 
 
 ## One access token to rule them all

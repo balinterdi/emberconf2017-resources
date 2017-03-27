@@ -17,16 +17,16 @@ During the workshop, you're going to work on a local Ember application. We are g
 You are free to use your own personal development environment. We only need one specific security tool, which requires a few steps to set up. Instructions are included below.
 
 
-### Access to the repo
+### Access to the repository
 
-If you haven't told us what your Github user name is, please do that now on the Slack channel, so we can invite you to the repo.
+If you haven't told us what your Github user name is, please do that now on the Slack channel, so we can invite you to the repository.
 
 Once the invitation arrives, accept it and open the repository in your browser.
 
 
-### Seting up the application and tools
+### Setting up the application and tools
 
-Follow the README file of the repository, which tells you how to setup the applicationd and the tools. In a nutshell, you should perform the following steps:
+Follow the README file of the repository, which tells you how to setup the application and the tools. In a nutshell, you should perform the following steps:
 
 - Clone the repository and install dependencies
 - Launch the application (pay attention to the proxy options in the command)
