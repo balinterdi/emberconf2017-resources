@@ -46,9 +46,7 @@ You can give the application an *access token* for one of the supported provider
 
 So, let's grab the *access token* you saved to a file earlier, and plug it into the *Access Token* window of the *Token Inspector*. 
 
-In the first section, you can see a bit of information about the *access token* itself. Note that to get this information, the application needs to make an explicit call to a token information endpoint.
-
-In the second section, you can see a few pieces of information that could be retrieved.
+As you can see, we can easily retrieve user-specific information using this *access token*. In this case, it is obvious that the *Token Inspector* application is not the one that created or requested the *access token*.
 
 TODO SCREENSHOT TOKEN INSPECTOR
 
@@ -64,15 +62,7 @@ That is exactly one of the reasons why the scope of a requested *access token* s
 
 ### Explicitly checking the client ID
 
-One of the most important pieces of information in the metadata is the identity of the client to which the token belongs. The client ID you see should correspond to that of the Rock & Roll application:
-
-* Google Client ID: ``
-* Facebook Client ID: ``
-* Github Client ID: ``
-
-As you can see, the *client ID* of the token corresponds to that of the *Rock & Roll* application, yet our *Token Inspector* application has no problems using the same token to retrieve information from the protected resource.
-
-Therefore, *access tokens* coming from the frontend should be validated before they can be used. This is something that the backend needs to do explicitly. In the *Rock & Roll* application, the following code is responsible for verifying the *access token* coming from Google.
+To prevent such attacks as shown above, *access tokens* coming from the frontend should be validated before they can be used. This is something that the backend needs to do explicitly. In the *Rock & Roll* application, the following code is responsible for verifying the *access token* coming from Google.
 
 ```
  def validate_google_token(token)
@@ -132,17 +122,17 @@ For this, we will use *Burp* to intercept requests, and stop the flow once we ha
 ![](images/burp_intercepton.png)
 ![](images/burp_interceptforward.png)
 
-With the freshly obtained *authorization code*, go back to the *Token Inspector*, and enter it into the inspection field. Leave the other fields blank for now. 
-
-As you can see, exchanging the *authorization code* for an *access token* is definitely not possible without providing the *client ID* and *client secret*. Fill out the correct values from the list we showed earlier, and try again.
+With the freshly obtained *authorization code*, go back to the *Token Inspector*, and enter it into the inspection field. As you can see, a fresh token can be exchanged for an *access token*, as long as you possess the *client ID* and *client secret*. 
 
 TODO SCREENSHOT TOKEN INSPECTOR
 
-Now, we have actually obtained a valid *access token*, but we needed confidential information to get this far. Use the *access token* in the *Token Inspector* application to actually retrieve some information about the user.
+__*In the case of the Token Inspector, we have added the client IDs and client secrets to the client application. This is not a good security practice, and is only done for demonstration purposes!*__
+
+Use the *access token* in the *Token Inspector* application to actually retrieve some information about the user.
 
 Now, go back to the intercepted request in *Burp*, and hit the *Intercept On* button. This will turn interception off again, and forward all pending requests.
 
 The *authorization code* will now be sent to the backend, which will try to exchange this for an *access code*. This will result in an error, since have already used this *authorization code* in the previous steps.
 
-TODO SCREENSHOT OF ERROR
+TODO SCREENSHOT OF ERROR WHEN THE APP TRIES TO USE IT
 
